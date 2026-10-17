@@ -41,10 +41,36 @@ export default function App() {
     }
   };
 
-  // [CÂU 3d]: Nút tim riêng
-  const handleToggleFavorite = (id: string, next: boolean) => {
-    console.log('Toggle favorite:', id, next);
-  };
+ const handleToggleFavorite = async (id: string, nextStatus: boolean) => {
+  
+  const previousTours = [...tours];
+
+ 
+  setTours((prev) =>
+    prev.map((item) => (item.id === id ? { ...item, isFavorite: nextStatus } : item))
+  );
+
+  
+  try {
+    const res = await fetch(`${API_URL}/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ isFavorite: nextStatus }),
+    });
+
+    if (!res.ok) {
+      throw new Error('Cập nhật thất bại');
+    }
+  } catch (err) {
+    // 3. [CÂU 5c]: Hoàn tác trạng thái cũ và hiển thị Alert
+    setTours(previousTours);
+    if (Platform.OS === 'web') {
+      alert('Lỗi cập nhật yêu thích! Đã hoàn tác.');
+    } else {
+      Alert.alert('Lỗi', 'Không thể cập nhật trạng thái yêu thích!');
+    }
+  }
+};
 
   const sections: CityGroup[] = groupByCity(tours);
 
@@ -76,6 +102,7 @@ const renderListHeader = () => (
     )}
   </View>
 );
+
 
   return (
     <SafeAreaProvider>
