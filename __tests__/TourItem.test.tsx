@@ -1,6 +1,6 @@
 import React from 'react';
 import { describe, test, expect, jest } from '@jest/globals';
-import { render, fireEvent } from '@testing-library/react-native';
+import { render, fireEvent, screen } from '@testing-library/react-native';
 import TourItem from '../components/TourItem';
 import { Tour } from '../utils/tour';
 
@@ -19,33 +19,34 @@ const sampleTour: Tour = {
 describe('Test TourItem Component', () => {
   // [CÂU 7c]: Test bố cục compact
   test('Bố cục compact ẩn thành phố, không compact thì hiển thị', () => {
-    const { queryByText, rerender } = render(
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const view: any = render(
       <TourItem
         tour={sampleTour}
         compact={true}
-        onPress={jest.fn()}
-        onToggleFavorite={jest.fn()}
+        onPress={() => {}}
+        onToggleFavorite={() => {}}
       />
     );
-    expect(queryByText('Hà Nội')).toBeNull();
+    expect(screen.queryByText('Hà Nội')).toBeNull();
 
-    rerender(
+    view.rerender(
       <TourItem
         tour={sampleTour}
         compact={false}
-        onPress={jest.fn()}
-        onToggleFavorite={jest.fn()}
+        onPress={() => {}}
+        onToggleFavorite={() => {}}
       />
     );
-    expect(queryByText('Hà Nội')).not.toBeNull();
+    expect(screen.queryByText('Hà Nội')).not.toBeNull();
   });
 
   // [CÂU 7d]: Test sự kiện click tim và click thẻ
-  test('Nhấn fav-btn gọi onToggleFavorite đúng 1 lần và không gọi onPress; nhấn tên gọi onPress', () => {
+  test('Nhấn fav-btn gọi onToggleFavorite đúng 1 lần và không gọi onPress', () => {
     const mockOnPress = jest.fn();
     const mockOnToggleFavorite = jest.fn();
 
-    const { getByTestId, getByText } = render(
+    render(
       <TourItem
         tour={sampleTour}
         compact={false}
@@ -54,12 +55,12 @@ describe('Test TourItem Component', () => {
       />
     );
 
-    fireEvent.press(getByTestId('fav-btn'));
+    fireEvent.press(screen.getByTestId('fav-btn'));
     expect(mockOnToggleFavorite).toHaveBeenCalledTimes(1);
     expect(mockOnToggleFavorite).toHaveBeenCalledWith('10', true);
     expect(mockOnPress).not.toHaveBeenCalled();
 
-    fireEvent.press(getByText('Tour Hà Nội Phố'));
+    fireEvent.press(screen.getByText('Tour Hà Nội Phố'));
     expect(mockOnPress).toHaveBeenCalledWith(sampleTour);
   });
 });
