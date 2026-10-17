@@ -1,10 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   StyleSheet,
   View,
   Text,
   TextInput,
   SectionList,
+  FlatList,
   ActivityIndicator,
   Alert,
   Platform,
@@ -12,7 +13,6 @@ import {
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import TourItem from './components/TourItem';
 import { Tour, CityGroup, groupByCity, formatDate, formatCurrency } from './utils/tour';
-import { FlatList } from 'react-native';
 
 const API_URL = 'https://6ac8befffd7c536b1bd9b9d0.mockapi.io/tours';
 
@@ -31,7 +31,6 @@ export default function App() {
       .catch(() => setLoading(false));
   }, []);
 
-  // [CÂU 3d]: Nhấn thẻ mở Alert
   const handlePressTour = (tour: Tour) => {
     const msg = `Tên: ${tour.name}\nKhởi hành: ${formatDate(tour.departure)}\nThời gian: ${tour.days} ngày\nGiá: ${formatCurrency(tour.price)}`;
     if (Platform.OS === 'web') {
@@ -41,73 +40,76 @@ export default function App() {
     }
   };
 
- const handleToggleFavorite = async (id: string, nextStatus: boolean) => {
-  
-  const previousTours = [...tours];
+  const handleToggleFavorite = async (id: string, nextStatus: boolean) => {
+    const previousTours = [...tours];
 
- 
-  setTours((prev) =>
-    prev.map((item) => (item.id === id ? { ...item, isFavorite: nextStatus } : item))
+    setTours((prev) =>
+      prev.map((item) => (item.id === id ? { ...item, isFavorite: nextStatus } : item))
+    );
+
+    try {
+      const res = await fetch(`${API_URL}/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ isFavorite: nextStatus }),
+      });
+
+      if (!res.ok) {
+        throw new Error('Cập nhật thất bại');
+      }
+    } catch (err) {
+      setTours(previousTours);
+      if (Platform.OS === 'web') {
+        alert('Lỗi cập nhật yêu thích! Đã hoàn tác.');
+      } else {
+        Alert.alert('Lỗi', 'Không thể cập nhật trạng thái yêu thích!');
+      }
+    }
+  };
+
+  const favoriteTours = useMemo(() => {
+    return tours.filter((t) => t.isFavorite);
+  }, [tours]);
+
+  // [CÂU 6a]: Lọc theo tên với useMemo, trim(), không phân biệt hoa thường. Nhóm rỗng tự động ẩn
+  const sections: CityGroup[] = useMemo(() => {
+    const keyword = searchText.trim().toLowerCase();
+    const filtered = tours.filter((t) =>
+      t.name.toLowerCase().includes(keyword)
+    );
+    return groupByCity(filtered);
+  }, [tours, searchText]);
+
+  const renderListHeader = () => (
+    <View style={styles.favSection}>
+      <Text style={styles.sectionHeaderTitle}>
+        Tour yêu thích ({favoriteTours.length})
+      </Text>
+      {favoriteTours.length === 0 ? (
+        <Text style={styles.emptyFavText}>Chưa có tour yêu thích</Text>
+      ) : (
+        <FlatList
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          data={favoriteTours}
+          keyExtractor={(item) => 'fav_' + item.id}
+          ItemSeparatorComponent={() => <View style={{ width: 12 }} />}
+          renderItem={({ item }) => (
+            <TourItem
+              tour={item}
+              compact={true}
+              onPress={handlePressTour}
+              onToggleFavorite={handleToggleFavorite}
+            />
+          )}
+        />
+      )}
+    </View>
   );
-
-  
-  try {
-    const res = await fetch(`${API_URL}/${id}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ isFavorite: nextStatus }),
-    });
-
-    if (!res.ok) {
-      throw new Error('Cập nhật thất bại');
-    }
-  } catch (err) {
-    // 3. [CÂU 5c]: Hoàn tác trạng thái cũ và hiển thị Alert
-    setTours(previousTours);
-    if (Platform.OS === 'web') {
-      alert('Lỗi cập nhật yêu thích! Đã hoàn tác.');
-    } else {
-      Alert.alert('Lỗi', 'Không thể cập nhật trạng thái yêu thích!');
-    }
-  }
-};
-
-  const sections: CityGroup[] = groupByCity(tours);
-
-  const favoriteTours = tours.filter((t) => t.isFavorite);
-
-const renderListHeader = () => (
-  <View style={styles.favSection}>
-    <Text style={styles.sectionHeaderTitle}>
-      Tour yêu thích ({favoriteTours.length})
-    </Text>
-    {favoriteTours.length === 0 ? (
-      <Text style={styles.emptyFavText}>Chưa có tour yêu thích</Text>
-    ) : (
-      <FlatList
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        data={favoriteTours}
-        keyExtractor={(item) => 'fav_' + item.id}
-        ItemSeparatorComponent={() => <View style={{ width: 12 }} />}
-        renderItem={({ item }) => (
-          <TourItem
-            tour={item}
-            compact={true}
-            onPress={handlePressTour}
-            onToggleFavorite={handleToggleFavorite}
-          />
-        )}
-      />
-    )}
-  </View>
-);
-
 
   return (
     <SafeAreaProvider>
       <SafeAreaView style={styles.container}>
-        {/* [CÂU 1c]: Header */}
         <View style={styles.header}>
           <Text style={styles.appTitle}>Tour Việt</Text>
           <Text style={styles.studentInfo}>23651831 – Trần Nam Sơn</Text>
@@ -119,19 +121,17 @@ const renderListHeader = () => (
           />
         </View>
 
-        {/* [CÂU 2c]: Loading Indicator */}
         {loading ? (
           <View style={styles.center}>
             <ActivityIndicator size="large" color="#0984e3" />
             <Text style={{ marginTop: 8 }}>Đang tải danh sách tour...</Text>
           </View>
         ) : (
-          /* [CÂU 2b & 3d]: SectionList render qua TourItem */
           <SectionList
-            ListHeaderComponent={renderListHeader}
             sections={sections}
             keyExtractor={(item) => item.id}
             stickySectionHeadersEnabled={true}
+            ListHeaderComponent={renderListHeader}
             renderSectionHeader={({ section: { title, data } }) => (
               <View style={styles.citySectionHeader}>
                 <Text style={styles.cityHeaderText}>
@@ -142,6 +142,7 @@ const renderListHeader = () => (
             renderItem={({ item }) => (
               <TourItem
                 tour={item}
+                compact={false}
                 onPress={handlePressTour}
                 onToggleFavorite={handleToggleFavorite}
               />
@@ -173,6 +174,24 @@ const styles = StyleSheet.create({
     backgroundColor: '#f8f9fa',
   },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  favSection: {
+    marginBottom: 16,
+    paddingBottom: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#e1e2e6',
+  },
+  sectionHeaderTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#2d3436',
+    marginBottom: 8,
+  },
+  emptyFavText: {
+    fontSize: 13,
+    color: '#95a5a6',
+    fontStyle: 'italic',
+    paddingVertical: 10,
+  },
   citySectionHeader: {
     backgroundColor: '#eaf2f8',
     padding: 8,
@@ -180,7 +199,4 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   cityHeaderText: { fontSize: 15, fontWeight: 'bold', color: '#0984e3' },
-  favSection: { marginBottom: 16, paddingBottom: 12, borderBottomWidth: 1, borderBottomColor: '#e1e2e6' },
-sectionHeaderTitle: { fontSize: 16, fontWeight: 'bold', color: '#2d3436', marginBottom: 8 },
-emptyFavText: { fontSize: 13, color: '#95a5a6', fontStyle: 'italic', paddingVertical: 10 },
 });
