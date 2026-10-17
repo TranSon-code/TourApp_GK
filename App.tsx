@@ -12,6 +12,7 @@ import {
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import TourItem from './components/TourItem';
 import { Tour, CityGroup, groupByCity, formatDate, formatCurrency } from './utils/tour';
+import { FlatList } from 'react-native';
 
 const API_URL = 'https://6ac8befffd7c536b1bd9b9d0.mockapi.io/tours';
 
@@ -47,6 +48,35 @@ export default function App() {
 
   const sections: CityGroup[] = groupByCity(tours);
 
+  const favoriteTours = tours.filter((t) => t.isFavorite);
+
+const renderListHeader = () => (
+  <View style={styles.favSection}>
+    <Text style={styles.sectionHeaderTitle}>
+      Tour yêu thích ({favoriteTours.length})
+    </Text>
+    {favoriteTours.length === 0 ? (
+      <Text style={styles.emptyFavText}>Chưa có tour yêu thích</Text>
+    ) : (
+      <FlatList
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        data={favoriteTours}
+        keyExtractor={(item) => 'fav_' + item.id}
+        ItemSeparatorComponent={() => <View style={{ width: 12 }} />}
+        renderItem={({ item }) => (
+          <TourItem
+            tour={item}
+            compact={true}
+            onPress={handlePressTour}
+            onToggleFavorite={handleToggleFavorite}
+          />
+        )}
+      />
+    )}
+  </View>
+);
+
   return (
     <SafeAreaProvider>
       <SafeAreaView style={styles.container}>
@@ -71,6 +101,7 @@ export default function App() {
         ) : (
           /* [CÂU 2b & 3d]: SectionList render qua TourItem */
           <SectionList
+            ListHeaderComponent={renderListHeader}
             sections={sections}
             keyExtractor={(item) => item.id}
             stickySectionHeadersEnabled={true}
@@ -122,4 +153,7 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   cityHeaderText: { fontSize: 15, fontWeight: 'bold', color: '#0984e3' },
+  favSection: { marginBottom: 16, paddingBottom: 12, borderBottomWidth: 1, borderBottomColor: '#e1e2e6' },
+sectionHeaderTitle: { fontSize: 16, fontWeight: 'bold', color: '#2d3436', marginBottom: 8 },
+emptyFavText: { fontSize: 13, color: '#95a5a6', fontStyle: 'italic', paddingVertical: 10 },
 });
