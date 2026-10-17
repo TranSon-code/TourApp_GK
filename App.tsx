@@ -1,9 +1,24 @@
-import React, { useState } from 'react';
-import { StyleSheet, View, Text, TextInput } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { StyleSheet, View, Text, TextInput, ActivityIndicator } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
+import { Tour } from './utils/tour';
+
+const API_URL = 'https://6ac8befffd7c536b1bd9b9d0.mockapi.io/tours';
 
 export default function App() {
+  const [tours, setTours] = useState<Tour[]>([]);
+  const [loading, setLoading] = useState(true);
   const [searchText, setSearchText] = useState('');
+
+  useEffect(() => {
+    fetch(API_URL)
+      .then((res) => res.json())
+      .then((data) => {
+        setTours(data);
+        setLoading(false);
+      })
+      .catch(() => setLoading(false));
+  }, []);
 
   return (
     <SafeAreaProvider>
@@ -18,6 +33,13 @@ export default function App() {
             onChangeText={setSearchText}
           />
         </View>
+
+        {loading && (
+          <View style={styles.center}>
+            <ActivityIndicator size="large" color="#0984e3" />
+            <Text style={{ marginTop: 8 }}>Đang tải danh sách tour...</Text>
+          </View>
+        )}
       </SafeAreaView>
     </SafeAreaProvider>
   );
@@ -25,20 +47,9 @@ export default function App() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#f5f6fa' },
-  header: {
-    padding: 16,
-    backgroundColor: '#fff',
-    borderBottomWidth: 1,
-    borderBottomColor: '#e1e2e6',
-  },
+  header: { padding: 16, backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#e1e2e6' },
   appTitle: { fontSize: 22, fontWeight: 'bold', color: '#2d3436' },
   studentInfo: { fontSize: 13, color: '#636e72', marginTop: 2, marginBottom: 10 },
-  searchInput: {
-    height: 40,
-    borderWidth: 1,
-    borderColor: '#dfe6e9',
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    backgroundColor: '#f8f9fa',
-  },
+  searchInput: { height: 40, borderWidth: 1, borderColor: '#dfe6e9', borderRadius: 8, paddingHorizontal: 12, backgroundColor: '#f8f9fa' },
+  center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
 });
