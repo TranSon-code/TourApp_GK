@@ -48,3 +48,4 @@ export const getSeatLabel = (seats: number): string => {
 export const formatCurrency = (amount: number): string => {
   return Number(amount).toLocaleString('vi-VN') + ' ₫';
 };
+
