@@ -1,7 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { StyleSheet, View, Text, TextInput, ActivityIndicator } from 'react-native';
+import {
+  StyleSheet,
+  View,
+  Text,
+  TextInput,
+  SectionList,
+  ActivityIndicator,
+} from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
-import { Tour } from './utils/tour';
+import { Tour, CityGroup, groupByCity } from './utils/tour';
 
 const API_URL = 'https://6ac8befffd7c536b1bd9b9d0.mockapi.io/tours';
 
@@ -20,6 +27,8 @@ export default function App() {
       .catch(() => setLoading(false));
   }, []);
 
+  const sections: CityGroup[] = groupByCity(tours);
+
   return (
     <SafeAreaProvider>
       <SafeAreaView style={styles.container}>
@@ -34,11 +43,31 @@ export default function App() {
           />
         </View>
 
-        {loading && (
+        {loading ? (
           <View style={styles.center}>
             <ActivityIndicator size="large" color="#0984e3" />
             <Text style={{ marginTop: 8 }}>Đang tải danh sách tour...</Text>
           </View>
+        ) : (
+          <SectionList
+            sections={sections}
+            keyExtractor={(item) => item.id}
+            stickySectionHeadersEnabled={true}
+            renderSectionHeader={({ section: { title, data } }) => (
+              <View style={styles.citySectionHeader}>
+                <Text style={styles.cityHeaderText}>
+                  {title} · {data.length} tour
+                </Text>
+              </View>
+            )}
+            renderItem={({ item }) => (
+              <View style={styles.rawCard}>
+                <Text style={{ fontWeight: 'bold' }}>{item.name}</Text>
+                <Text>{item.city} - {item.price} VNĐ</Text>
+              </View>
+            )}
+            contentContainerStyle={{ padding: 16 }}
+          />
         )}
       </SafeAreaView>
     </SafeAreaProvider>
@@ -52,4 +81,7 @@ const styles = StyleSheet.create({
   studentInfo: { fontSize: 13, color: '#636e72', marginTop: 2, marginBottom: 10 },
   searchInput: { height: 40, borderWidth: 1, borderColor: '#dfe6e9', borderRadius: 8, paddingHorizontal: 12, backgroundColor: '#f8f9fa' },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  citySectionHeader: { backgroundColor: '#eaf2f8', padding: 8, borderRadius: 6, marginTop: 8 },
+  cityHeaderText: { fontSize: 15, fontWeight: 'bold', color: '#0984e3' },
+  rawCard: { backgroundColor: '#fff', padding: 12, marginVertical: 4, borderRadius: 6 },
 });
