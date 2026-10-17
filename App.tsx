@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import {
   StyleSheet,
   View,
@@ -9,6 +9,7 @@ import {
   ActivityIndicator,
   Alert,
   Platform,
+  RefreshControl,
 } from 'react-native';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import TourItem from './components/TourItem';
@@ -19,17 +20,37 @@ const API_URL = 'https://6ac8befffd7c536b1bd9b9d0.mockapi.io/tours';
 export default function App() {
   const [tours, setTours] = useState<Tour[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [searchText, setSearchText] = useState('');
 
-  useEffect(() => {
+  // Hàm tải dữ liệu API GET
+  const fetchTours = useCallback(() => {
     fetch(API_URL)
-      .then((res) => res.json())
+      .then((res) => {
+        if (!res.ok) throw new Error('Lỗi fetch');
+        return res.json();
+      })
       .then((data) => {
         setTours(data);
         setLoading(false);
+        setRefreshing(false);
       })
-      .catch(() => setLoading(false));
+      .catch((err) => {
+        console.error(err);
+        setLoading(false);
+        setRefreshing(false);
+      });
   }, []);
+
+  useEffect(() => {
+    fetchTours();
+  }, [fetchTours]);
+
+  // [CÂU 6b]: Kéo để làm mới bằng RefreshControl, giữ nguyên từ khoá đang tìm
+  const onRefresh = () => {
+    setRefreshing(true);
+    fetchTours();
+  };
 
   const handlePressTour = (tour: Tour) => {
     const msg = `Tên: ${tour.name}\nKhởi hành: ${formatDate(tour.departure)}\nThời gian: ${tour.days} ngày\nGiá: ${formatCurrency(tour.price)}`;
@@ -71,7 +92,7 @@ export default function App() {
     return tours.filter((t) => t.isFavorite);
   }, [tours]);
 
-  // [CÂU 6a]: Lọc theo tên với useMemo, trim(), không phân biệt hoa thường. Nhóm rỗng tự động ẩn
+  // [CÂU 6a]: Lọc theo tên từ ô tìm kiếm (useMemo, trim(), không phân biệt hoa thường)
   const sections: CityGroup[] = useMemo(() => {
     const keyword = searchText.trim().toLowerCase();
     const filtered = tours.filter((t) =>
@@ -132,6 +153,12 @@ export default function App() {
             keyExtractor={(item) => item.id}
             stickySectionHeadersEnabled={true}
             ListHeaderComponent={renderListHeader}
+            // [CÂU 6b]: Không có kết quả thì hiển thị thông báo
+            ListEmptyComponent={
+              <View style={styles.emptyContainer}>
+                <Text style={styles.emptyText}>Không tìm thấy tour phù hợp</Text>
+              </View>
+            }
             renderSectionHeader={({ section: { title, data } }) => (
               <View style={styles.citySectionHeader}>
                 <Text style={styles.cityHeaderText}>
@@ -148,6 +175,10 @@ export default function App() {
               />
             )}
             contentContainerStyle={{ padding: 16 }}
+            // [CÂU 6b]: Pull to refresh
+            refreshControl={
+              <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+            }
           />
         )}
       </SafeAreaView>
@@ -199,4 +230,12 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   cityHeaderText: { fontSize: 15, fontWeight: 'bold', color: '#0984e3' },
+  emptyContainer: {
+    alignItems: 'center',
+    paddingVertical: 40,
+  },
+  emptyText: {
+    fontSize: 14,
+    color: '#7f8c8d',
+  },
 });
