@@ -15,7 +15,7 @@ import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import TourItem from './components/TourItem';
 import { Tour, CityGroup, groupByCity, formatDate, formatCurrency } from './utils/tour';
 
-const API_URL = 'https://6ac8befffd7c536b1bd9b9d0.mockapi.io/tours';
+const API_URL = 'https://6ac9d2063115bcc95820063e.mockapi.io/tours';
 
 export default function App() {
   const [tours, setTours] = useState<Tour[]>([]);
@@ -23,7 +23,6 @@ export default function App() {
   const [refreshing, setRefreshing] = useState(false);
   const [searchText, setSearchText] = useState('');
 
-  // Hàm tải dữ liệu API GET
   const fetchTours = useCallback(() => {
     fetch(API_URL)
       .then((res) => {
@@ -46,7 +45,6 @@ export default function App() {
     fetchTours();
   }, [fetchTours]);
 
-  // [CÂU 6b]: Kéo để làm mới bằng RefreshControl, giữ nguyên từ khoá đang tìm
   const onRefresh = () => {
     setRefreshing(true);
     fetchTours();
@@ -92,7 +90,6 @@ export default function App() {
     return tours.filter((t) => t.isFavorite);
   }, [tours]);
 
-  // [CÂU 6a]: Lọc theo tên từ ô tìm kiếm (useMemo, trim(), không phân biệt hoa thường)
   const sections: CityGroup[] = useMemo(() => {
     const keyword = searchText.trim().toLowerCase();
     const filtered = tours.filter((t) =>
@@ -153,7 +150,6 @@ export default function App() {
             keyExtractor={(item) => item.id}
             stickySectionHeadersEnabled={true}
             ListHeaderComponent={renderListHeader}
-            // [CÂU 6b]: Không có kết quả thì hiển thị thông báo
             ListEmptyComponent={
               <View style={styles.emptyContainer}>
                 <Text style={styles.emptyText}>Không tìm thấy tour phù hợp</Text>
@@ -175,7 +171,6 @@ export default function App() {
               />
             )}
             contentContainerStyle={{ padding: 16 }}
-            // [CÂU 6b]: Pull to refresh
             refreshControl={
               <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
             }

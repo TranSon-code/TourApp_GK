@@ -2,9 +2,8 @@ import React from 'react';
 import { describe, test, expect, jest } from '@jest/globals';
 import { render, fireEvent, screen } from '@testing-library/react-native';
 import TourItem from '../components/TourItem';
-import { Tour } from '../utils/tour';
 
-const sampleTour: Tour = {
+const sampleTour = {
   id: '10',
   name: 'Tour Hà Nội Phố',
   city: 'Hà Nội',
@@ -19,7 +18,6 @@ const sampleTour: Tour = {
 describe('Test TourItem Component', () => {
   // [CÂU 7c]: Test bố cục compact
   test('Bố cục compact ẩn thành phố, không compact thì hiển thị', () => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const view: any = render(
       <TourItem
         tour={sampleTour}

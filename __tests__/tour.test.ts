@@ -1,7 +1,7 @@
 import { describe, test, expect } from '@jest/globals';
-import { groupByCity, formatDate, getSeatLabel, Tour } from '../utils/tour';
+import { groupByCity, formatDate, getSeatLabel } from '../utils/tour';
 
-const mockTours: Tour[] = [
+const mockTours = [
   {
     id: '1',
     name: 'Tour Phú Quốc',
@@ -49,13 +49,12 @@ describe('Test Tour Utility Functions', () => {
     expect(result[0].data[1].id).toBe('2');
   });
 
-  
-  
+  // [CÂU 7b]: Test formatDate
   test('formatDate chuyển đổi YYYY-MM-DD thành DD/MM/YYYY', () => {
     expect(formatDate('2026-11-05')).toBe('05/11/2026');
   });
 
-  
+  // [CÂU 7b]: Test getSeatLabel các giá trị biên 0, 3, 4
   test('getSeatLabel trả về đúng nhãn theo số chỗ biên', () => {
     expect(getSeatLabel(0)).toBe('Hết chỗ');
     expect(getSeatLabel(3)).toBe('Chỉ còn 3 chỗ');
