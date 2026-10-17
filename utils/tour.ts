@@ -32,3 +32,19 @@ export const groupByCity = (tours: Tour[]): CityGroup[] => {
       ),
     }));
 };
+
+export const formatDate = (dateStr: string): string => {
+  if (!dateStr) return '';
+  const parts = dateStr.split('-');
+  return parts.length === 3 ? `${parts[2]}/${parts[1]}/${parts[0]}` : dateStr;
+};
+
+export const getSeatLabel = (seats: number): string => {
+  if (seats <= 0) return 'Hết chỗ';
+  if (seats <= 3) return `Chỉ còn ${seats} chỗ`;
+  return `Còn ${seats} chỗ`;
+};
+
+export const formatCurrency = (amount: number): string => {
+  return Number(amount).toLocaleString('vi-VN') + ' ₫';
+};
